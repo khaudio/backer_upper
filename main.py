@@ -10,7 +10,7 @@ targetFiles = (
     )
 
 serverIP, port = 'localhost', 25000
-
+delimiter = b'\x80'
 
 def main():
     for changedFile in loop(targetFiles):
@@ -19,6 +19,7 @@ def main():
             s.connect((serverIP, port))
             for line in f:
                 s.send(line)
+            s.send(delimiter)
 
 
 if __name__ == '__main__':
