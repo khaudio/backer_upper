@@ -1,5 +1,9 @@
 #/usr/bin/env python
 
+# TODO:
+    # more hash algs
+        # reflected in meta
+
 from hashlib import md5, sha1, sha256, sha384, sha512
 from json import dump, dumps, load
 from os import path
@@ -11,11 +15,10 @@ Periodically checks for changed files
 """
 
 
-def make_temp_copy(currentFile):
+def make_tmp_copy(filename, filepath):
     """Duplicate the file to a tmp volume to avoid reading while writing"""
-    fileName = currentFile.split('/')[-1]
-    tmpFile = path.join('/tmp', fileName)
-    copyfile(fileName, tmpFile)
+    tmpFile = path.join('/tmp', filename)
+    copyfile(filename, tmpFile)
     return tmpFile
 
 
@@ -47,20 +50,21 @@ def read_hashes():
 def loop(targetFiles):
     fileHashes = read_hashes()
     if not fileHashes:
-        fileHashes = [{'filename': f, 'checksum': None} for f in targetFiles]
+        fileHashes = [{'filename': path.split(f)[-1], 'path': path.abspath(f), 'sha1': None} for f in targetFiles]
 
     # Write to disk every x number of detected changes to lessen wear on local storage
     writeThreshold, detected = 10, 0
 
     while True:
         changed = []
-        for f in fileHashes:
-            duplicate = make_temp_copy(f['filename'])
+        for item in fileHashes:
+            duplicate = make_tmp_copy(item['filename'], item['path'])
             hashed = check_hash(duplicate)
-            if hashed != f['checksum']:
-                changed.append(f)
-                f['checksum'] = hashed
-                yield duplicate
+            if hashed != item['sha1']:
+                item['sha1'] = hashed
+                changed.append(item)
+                # Yield a tuple of the duplicated file for transmission, then metadata
+                yield (duplicate, item)
         if changed:
             detected += 1
             if detected >= writeThreshold or detected is 1:

@@ -6,20 +6,26 @@ from curio.socket import *
 from json import dump, loads
 
 
-delimiter = b'\x80'
+preamble, delimiter, escape = b'\x80', b'\x81', b'\x82'
 
 
 async def interpret(line, message, output):
-    try:
-        payload = loads(line)
-        print('Received json')
-    except:
-        if isinstance(line, bytes):
-            if delimiter in line:
-                payload = b''.join(message)
-                message = []
-            else:
-                message.append(line)
+    if isinstance(line, bytes):
+        if preamble in line:
+            message, payload = [], b''
+        elif delimiter in line:
+            try:
+                meta = loads(b''.join(message))
+                yield meta
+                print('Received json metadata')
+            except:
+                print('Unable to parse json metadata')
+        elif escape in line:
+            payload = b''.join(message)
+            yield payload
+            message = []
+        else:
+            message.append(line)
     else:
         pass
 
@@ -33,7 +39,8 @@ async def incoming(clientStream, output):
     try:
         message = []
         async for line in clientStream:
-            await interpret(line, message, output)
+            async for i in interpret(line, message, output):
+                print(i)
     except CancelledError:
         await clientStream.write(b'Server shutting down\n')
         raise
