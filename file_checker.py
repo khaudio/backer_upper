@@ -15,6 +15,11 @@ Periodically checks for changed files
 """
 
 
+# Number of seconds in between each check for changes
+numSeconds = 60
+assert isinstance(numSeconds, (int, float)), 'Must be integer or float'
+
+
 def make_tmp_copy(filename, filepath):
     """Duplicate the file to a tmp volume to avoid reading while writing"""
     tmpFile = path.join('/tmp', filename)
@@ -73,7 +78,7 @@ def loop(targetFiles):
             print('Staged for upload:')
             for stagedFile in changed:
                 print(stagedFile)
-        sleep(1)
+        sleep(numSeconds)
 
 
 if __name__ == '__main__':

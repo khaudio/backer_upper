@@ -8,12 +8,10 @@ from curio import run, spawn, SignalQueue, TaskGroup, Queue, tcp_server, Cancell
 from curio.socket import *
 from json import dump, loads
 from file_checker import check_hash
+from os import makedirs, path
 
 
-# if server and client are both on localhost for testing
-local = True
-
-preamble, delimiter, escape = b'\x80' * 3, b'\x81' * 3, b'\x82' * 3
+preamble, escape = b'\x80' * 3, b'\x81' * 3
 
 
 async def receive(inc, out):
@@ -31,6 +29,7 @@ async def receive(inc, out):
             except:
                 print('Received payload')
                 await out.put(data)
+                return
             else:
                 print('Received json metadata')
                 await out.put(meta)
@@ -43,13 +42,13 @@ async def receive(inc, out):
 
 def save_payload(meta, payload):
     print('Writing received data')
-    if local:
-        partitioned = meta['filename'].rpartition('.')
-        name = partitioned[0] + '_copy' + ''.join(partitioned[1:])
-    else:
-        name = meta['filename']
+    name = path.join(meta['client mac'], meta['filename'])
+    if not path.exists(meta['client mac']):
+        print('Creating client directory')
+        makedirs(meta['client mac'])
     with open(name, 'wb') as new:
         new.write(payload)
+    print('Data saved')
     return name
 
 
@@ -64,13 +63,19 @@ async def interpret(inc):
         if meta and payload:
             saved = save_payload(meta, payload)
             if saved:
-                process(meta, saved)
+                if process(meta, saved):
+                    print('Transfer completed successfully')
+                return
 
 
 def process(meta, saved):
-    print('Processing received data')
+    print('Verifying received data')
     if check_hash(saved) == meta['sha1']:
         print('Data verified')
+        return True
+    else:
+        print('Data could not be verified')
+        return False
 
 
 async def outgoing(clientStream, output):
