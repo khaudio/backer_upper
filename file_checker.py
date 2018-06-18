@@ -64,7 +64,7 @@ def loop(targetFiles):
                 item['sha1'] = hashed
                 changed.append(item)
                 # Yield a tuple of the duplicated file for transmission, then metadata
-                yield (duplicate, item)
+                yield (duplicate, {'filename': item['filename'], 'sha1': item['sha1']})
         if changed:
             detected += 1
             if detected >= writeThreshold or detected is 1:
