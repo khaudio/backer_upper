@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# TODO:
-#     rewrite test file and save under diff name for testing
 
 import signal
 from curio import run, spawn, SignalQueue, TaskGroup, Queue, tcp_server, CancelledError, async_thread

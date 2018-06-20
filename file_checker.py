@@ -23,7 +23,7 @@ assert isinstance(numSeconds, (int, float)), 'Must be integer or float'
 def make_tmp_copy(filename, filepath):
     """Duplicate the file to a tmp volume to avoid reading while writing"""
     tmpFile = path.join('/tmp', filename)
-    copyfile(filename, tmpFile)
+    copyfile(filepath, tmpFile)
     return tmpFile
 
 
@@ -55,7 +55,10 @@ def read_hashes():
 def loop(targetFiles):
     fileHashes = read_hashes()
     if not fileHashes:
-        fileHashes = [{'filename': path.split(f)[-1], 'path': path.abspath(f), 'sha1': None} for f in targetFiles]
+        fileHashes = [
+                {'filename': path.split(f)[-1], 'path': path.abspath(f), 'sha1': None}
+                for f in targetFiles
+            ]
 
     # Write to disk every x number of detected changes to lessen wear on local storage
     writeThreshold, detected = 10, 0
@@ -79,10 +82,3 @@ def loop(targetFiles):
             for stagedFile in changed:
                 print(stagedFile)
         sleep(numSeconds)
-
-
-if __name__ == '__main__':
-    targetFiles = (
-            'testdata.txt',
-        )
-    loop(targetFiles)

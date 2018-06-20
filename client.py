@@ -7,8 +7,8 @@ from uuid import getnode
 
 
 targetFiles = (
-        'testdata.txt',
-        'testdata2.txt'
+        'testData/testdata.txt',
+        'testData/testdata2.txt'
     )
 
 serverIP, port = 'localhost', 25000
