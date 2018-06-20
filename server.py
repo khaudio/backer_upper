@@ -62,7 +62,8 @@ async def interpret(inc):
             saved = save_payload(meta, payload)
             if saved:
                 if process(meta, saved):
-                    print('Transfer completed successfully')
+                    confirmation = 'Transfer completed successfully: {}'
+                    print(confirmation.format(meta['filename']))
                 return
 
 

@@ -71,13 +71,15 @@ def loop(targetFiles):
             if hashed != item['sha1']:
                 item['sha1'] = hashed
                 changed.append(item)
-                # Yield a tuple of the duplicated file for transmission, then metadata
-                yield (duplicate, {'filename': item['filename'], 'sha1': item['sha1']})
+                # Yield a tuple of metadata, then the duplicated file for transmission
+                yield ({'filename': item['filename'], 'sha1': item['sha1']}, duplicate)
         if changed:
             detected += 1
             if detected >= writeThreshold or detected is 1:
                 print('Writing file hashes to disk')
                 write_hashes(fileHashes)
+                if detected >= writeThreshold:
+                    detected = 0
             print('Staged for upload:')
             for stagedFile in changed:
                 print(stagedFile)

@@ -28,12 +28,12 @@ def transmit(s, message, file=False):
 
 def main():
     for changedFile in loop(targetFiles):
-        meta = changedFile[1]
+        meta = changedFile[0]
         meta['client mac'] = hex(getnode())
         s = socket(AF_INET, SOCK_STREAM)
         s.connect((serverIP, port))
         transmit(s, dumps(meta).encode('utf-8'))
-        transmit(s, changedFile[0], file=True)
+        transmit(s, changedFile[1], file=True)
         s.shutdown(SHUT_RDWR)
         s.close()
 
