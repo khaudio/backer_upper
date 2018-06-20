@@ -15,11 +15,6 @@ Periodically checks for changed files
 """
 
 
-# Number of seconds in between each check for changes
-numSeconds = 60
-assert isinstance(numSeconds, (int, float)), 'Must be integer or float'
-
-
 def make_tmp_copy(filename, filepath):
     """Duplicate the file to a tmp volume to avoid reading while writing"""
     tmpFile = path.join('/tmp', filename)
@@ -52,17 +47,24 @@ def read_hashes():
         return None
 
 
-def loop(targetFiles):
-    fileHashes = read_hashes()
+def loop(targetFiles, writeThreshold=10, numSeconds=60):
+    """
+    Loop to check for changes.
+    Set writeThreshold to the minimum number of loops
+    in which changes were detected to write to disk since
+    the last write.  A higher number lessens wear
+    on local storage.
+    Set numSeconds to the desired number of seconds
+    in between each check for changes.
+    """
+    for arg in (writeThreshold, numSeconds):
+        assert isinstance(arg, (int, float)), 'Must be integer or float'
+    fileHashes, detected = read_hashes(), 0
     if not fileHashes:
         fileHashes = [
                 {'filename': path.split(f)[-1], 'path': path.abspath(f), 'sha1': None}
                 for f in targetFiles
             ]
-
-    # Write to disk every x number of detected changes to lessen wear on local storage
-    writeThreshold, detected = 10, 0
-
     while True:
         changed = []
         for item in fileHashes:
@@ -74,12 +76,10 @@ def loop(targetFiles):
                 # Yield a tuple of metadata, then the duplicated file for transmission
                 yield ({'filename': item['filename'], 'sha1': item['sha1']}, duplicate)
         if changed:
-            detected += 1
-            if detected >= writeThreshold or detected is 1:
+            detected = 0 if detected >= writeThreshold else detected + 1
+            if detected >= writeThreshold or detected is 0:
                 print('Writing file hashes to disk')
                 write_hashes(fileHashes)
-                if detected >= writeThreshold:
-                    detected = 0
             print('Staged for upload:')
             for stagedFile in changed:
                 print(stagedFile)
